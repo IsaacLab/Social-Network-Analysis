@@ -5,5 +5,5 @@ import networkx as nx
 
 G=nx.read_gml("network.gml")
 
-nx.clustering(G)
-nx.average_shortest_path_length(G)
+print nx.clustering(G)
+print nx.average_shortest_path_length(G)
