@@ -3,7 +3,37 @@
 
 import networkx as nx
 
-G=nx.read_gml("network.gml")
 
-print nx.clustering(G)
-print nx.average_shortest_path_length(G)
+def small_world(G):
+	N=len(G)
+	p=nx.density(G)
+	C=nx.average_clustering(G)
+	L=nx.average_shortest_path_length(nx.connected_component_subgraphs(G)[0])
+	print 'Network properties:'
+	print '- network size: ', N
+	print '- network density: ', p
+	print '- average clustering ', C
+	print '- average path length: ', L	
+	print
+
+	G1=nx.erdos_renyi_graph(N, p)
+	
+	N1=len(G1)
+	p1=nx.density(G1)
+	C1=nx.average_clustering(G1)
+	L1=nx.average_shortest_path_length(nx.connected_component_subgraphs(G1)[0])
+	print 'Equivalent random network properties:'
+	print '- network size: ', N1
+	print '- network density: ', p1
+	print '- average clustering ', C1
+	print '- average path length: ', L1
+	print
+	
+	print 'Relative clustering: ' , C/C1
+	print 'Relative path length: ' , L/L1
+
+
+G=nx.read_gml("network.gml")
+G=G.to_undirected()
+
+small_world(G)
