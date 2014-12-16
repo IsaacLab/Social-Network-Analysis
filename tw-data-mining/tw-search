@@ -1,0 +1,106 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+import time
+from datetime import datetime, timedelta
+import csv
+import codecs
+from twython import Twython
+from twython import exceptions
+
+keys_file='tw.keys'
+
+def get_search(query,maxid):
+
+	done=False
+	while(not done):
+		try:
+			print 'connecting'
+		  	print query
+		  	if maxid==-1:
+		  		search = t.search(q=query, result_type='recent',count=100)
+		  	else:
+		  		search = t.search(q=query, result_type='recent',count=100,max_id=maxid-1)
+			print 'Waiting for 2s'
+			time.sleep(2)
+			done = True
+		except exceptions.TwythonRateLimitError as e:
+			print e
+			print 'Waiting for 60s'
+			time.sleep(60)
+		except exceptions.TwythonError as e:
+			print e
+			print 'Waiting for 60s'
+			time.sleep(60)
+
+	return search
+ 
+
+
+
+with open(keys_file) as f:
+    APP_KEY = f.readline().strip("\n")
+    APP_SECRET = f.readline().strip("\n")
+    OAUTH_KEY = f.readline().strip("\n")
+    OAUTH_SECRET = f.readline().strip("\n")
+
+#t = Twython(APP_KEY, APP_SECRET, OAUTH_KEY, OAUTH_SECRET)
+t = Twython(APP_KEY, APP_SECRET, oauth_version=2)
+ACCESS_TOKEN = t.obtain_access_token()
+t = Twython(APP_KEY,access_token=ACCESS_TOKEN)
+
+
+min_id = 0
+
+query = 'twitter'
+
+OUTPUT='test.csv'
+
+limit_rate_limit = False
+done = False
+count = 0
+max_id=-1
+top_id=min_id
+
+fo = codecs.open(OUTPUT, encoding='utf-8', mode='w')
+
+usernames=[]
+
+while not done:
+
+	#	Extract tweets
+		print 'Extract tweets'
+		tweets=get_search(query,max_id)
+		N = len(tweets['statuses'])
+		if N ==0:
+			done = True
+		else:
+			#print tweets['statuses'][N-1]['id_str']
+			count = count + N
+			ids = [];
+			for tweet in tweets['statuses']:
+				if tweet['id']>min_id:
+					ids = ids + [tweet['id']]
+					# add one hour to datetime to shift from utc to time in Spain
+					print tweet['user']['screen_name']
+					print tweet['text'].encode('utf-8')
+					tweetdate = datetime.strptime(tweet['created_at'], '%a %b %d %H:%M:%S +0000 %Y') + timedelta(hours=1)
+					print tweetdate
+					
+					usernames=usernames+[tweet['user']['screen_name']]
+
+				else:
+					if len(ids)>0:
+						top_id=max(ids)
+					done = True
+			if len(ids)>0:
+				max_id = min(ids)	
+				if top_id==min_id:
+					top_id=max(ids)
+		print count
+		print max_id
+
+users=list(set(usernames))
+for user in users:
+		fo.write(user+'\n')
+
